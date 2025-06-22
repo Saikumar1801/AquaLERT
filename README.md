@@ -91,95 +91,70 @@ pip package manager
 
 Git
 
-Installation & Setup
+### Installation & Setup
 
 Clone the repository:
 
-Generated bash
-git clone https://github.com/your-username/aqualert.git
-cd aqualert
+``` bash
+git clone https://github.com/Saikumar1801/AquaLERT.git
+cd AquaLERT
+```
 
 
-Set up the Python virtual environment:
+### Set up the Python virtual environment:
 
-Generated bash
+``` bash
 python -m venv venv
 source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-IGNORE_WHEN_COPYING_START
-content_copy
-download
-Use code with caution.
-Bash
-IGNORE_WHEN_COPYING_END
+```
 
-Install dependencies:
+### Install dependencies:
 The project is split into a frontend and backend. Install requirements for both.
 
-Generated bash
-# Install backend requirements
-pip install -r backend/requirements.txt
+``` bash
+# Install requirements
+pip install -r requirements.txt
 
-# Install frontend requirements
-pip install -r frontend/requirements.txt
-IGNORE_WHEN_COPYING_START
-content_copy
-download
-Use code with caution.
-Bash
-IGNORE_WHEN_COPYING_END
+```
 
-Set up environment variables:
+### Set up environment variables:
 You will need an API key for Google Gemini.
 
 Create a file named .env inside the backend directory: backend/.env
 
 Add your API key to this file:
 
-Generated code
+``` code
 GEMINI_API_KEY="YOUR_API_KEY_HERE"
-IGNORE_WHEN_COPYING_START
-content_copy
-download
-Use code with caution.
-IGNORE_WHEN_COPYING_END
+```
 Running the Application
 
 You need to run two separate processes in two different terminals.
 
-Run the Flask Backend:
+Run the Backend:
 
-Generated bash
+``` bash
 # In your first terminal
 cd backend
-flask run
-IGNORE_WHEN_COPYING_START
-content_copy
-download
-Use code with caution.
-Bash
-IGNORE_WHEN_COPYING_END
+python app.py
+```
 
 The backend server will start, typically on http://127.0.0.1:5000.
 
 Run the Streamlit Frontend:
 
-Generated bash
+``` bash
 # In your second terminal
 cd frontend
 streamlit run Home.py
-IGNORE_WHEN_COPYING_START
-content_copy
-download
-Use code with caution.
-Bash
-IGNORE_WHEN_COPYING_END
+```
 
 The Streamlit application will open in your web browser, usually at http://localhost:8501.
 
 You can now interact with the full AquaLERT platform!
 
 📂 Project Structure
-Generated code
+``` code
 aqualert/
 ├── backend/
 │   ├── app.py                # Flask application logic and API endpoints
@@ -203,17 +178,14 @@ aqualert/
 │
 ├── .gitignore
 └── README.md
-IGNORE_WHEN_COPYING_START
-content_copy
-download
-Use code with caution.
-IGNORE_WHEN_COPYING_END
+```
+
 👥 Team & Acknowledgements
 
-[Your Name] - Project Lead & Backend/ML Developer
+Saikumar - Project Lead & Backend/ML Developer
 
-[Team Member 2 Name] - Frontend Developer
+Saikumar - Frontend Developer
 
-[Team Member 3 Name] - Data Scientist & UI/UX
+Saikumar - Data Scientist & UI/UX
 
 We would like to thank the organizers of #Hack4Haiti for this incredible opportunity to work on a project with meaningful social impact. We also acknowledge the public datasets from Kaggle that made our initial model training possible.
