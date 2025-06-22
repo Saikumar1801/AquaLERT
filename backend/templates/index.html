@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaSense AI - Water Safety for Haiti</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; color: #343a40; line-height: 1.7; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 20px auto; padding: 40px; background: white; box-shadow: 0 8px 30px rgba(0,0,0,0.08); border-radius: 12px; position: relative; }
+        .lang-switcher { position: absolute; top: 25px; right: 25px; background: #e9ecef; border-radius: 20px; padding: 5px; display: flex; z-index: 100; }
+        .lang-switcher button { padding: 6px 12px; border: none; cursor: pointer; background: none; font-weight: 500; color: #495057; }
+        .lang-switcher button.active { background: #007bff; color: white; border-radius: 15px; }
+        h1, h2 { text-align: center; color: #0d6efd; }
+        h1 { font-size: 2.8em; margin-bottom: 5px; }
+        .subtitle { text-align: center; font-size: 1.1em; color: #6c757d; margin-bottom: 40px; }
+        h2 { border-top: 1px solid #dee2e6; padding-top: 30px; margin-top: 40px; font-size: 1.8em; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9em; }
+        input[type="number"], input[type="file"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ced4da; border-radius: 8px; }
+        .submit-button { width: 100%; padding: 15px; margin-top: 10px; background-color: #0d6efd; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: 700; }
+        .results-container { display: none; margin-top: 30px; }
+        .result-box { background: #f8f9fa; padding: 25px; border-radius: 8px; border-left: 5px solid #6c757d; }
+        #result-summary { padding: 20px; border-radius: 8px; text-align: center; font-size: 1.5em; font-weight: bold; }
+        #result-summary.safe { background-color: #d1e7dd; color: #0f5132; }
+        #result-summary.unsafe { background-color: #f8d7da; color: #842029; }
+        .result-box h3 { text-align: left; color: #0d6efd; margin-top: 15px; margin-bottom: 10px; }
+        .result-box h3:first-child { margin-top: 0; }
+        .result-box ul { padding-left: 20px; margin: 0; }
+        #map { height: 400px; width: 100%; margin-top: 20px; border-radius: 12px; }
+        .modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: #fefefe; margin: auto; padding: 20px; width: 80%; max-width: 600px; border-radius: 10px; position: relative; }
+        .close-button { color: #aaa; position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="lang-switcher">
+            <button id="lang-en" class="active" onclick="setLanguage('en')">EN</button>
+            <button id="lang-ht" onclick="setLanguage('ht')">KR</button>
+        </div>
+
+        <h1 id="main-title">AquaSense AI</h1>
+        <p class="subtitle" id="subtitle">An intelligent system for water safety in Haiti, from real-time analysis to long-term forecasting.</p>
+
+        <h2 id="map-title">Community Water Safety Map</h2>
+        <p style="text-align:center;" id="map-desc">Real-time status of water sources from the community and verified by partner NGOs.</p>
+        <div id="map"></div>
+        
+        <h2 id="visual-title">Visual Water Check (No Sensor Needed)</h2>
+        <p style="text-align:center;" id="visual-desc">Have a photo of your water? Get an instant AI visual assessment.</p>
+        <div class="form-group">
+            <label for="image-upload" id="visual-label">Upload a photo of your water sample:</label>
+            <input type="file" id="image-upload" accept="image/*">
+        </div>
+        <div id="visual-results-container" class="result-box" style="display:none;"></div>
+
+
+        <h2 id="checker-title">Real-Time Potability Check</h2>
+        <form id="water-form">
+            <div class="form-grid">
+                <div class="form-group"><label for="ph">pH</label><input type="number" id="ph" step="0.1" placeholder="e.g., 7.4"></div>
+                <div class="form-group"><label for="Hardness">Hardness</label><input type="number" id="Hardness" step="0.1" placeholder="e.g., 204.8" required></div>
+                <div class="form-group"><label for="Solids">Solids (mg/L)</label><input type="number" id="Solids" step="0.1" placeholder="e.g., 20927.8" required></div>
+                <div class="form-group"><label for="Chloramines">Chloramines (ppm)</label><input type="number" id="Chloramines" step="0.1" placeholder="e.g., 7.3" required></div>
+                <div class="form-group"><label for="Sulfate">Sulfate (mg/L)</label><input type="number" id="Sulfate" step="0.1" placeholder="e.g., 333.7"></div>
+                <div class="form-group"><label for="Conductivity">Conductivity (μS/cm)</label><input type="number" id="Conductivity" step="0.1" placeholder="e.g., 421.0" required></div>
+                <div class="form-group"><label for="Organic_carbon">Organic Carbon (ppm)</label><input type="number" id="Organic_carbon" step="0.1" placeholder="e.g., 14.1" required></div>
+                <div class="form-group"><label for="Trihalomethanes">Trihalomethanes (μg/L)</label><input type="number" id="Trihalomethanes" step="0.1" placeholder="e.g., 66.3"></div>
+                <div class="form-group"><label for="Turbidity">Turbidity (NTU)</label><input type="number" id="Turbidity" step="0.1" placeholder="e.g., 3.9" required></div>
+                <!-- Hidden fields for location, for the proactive alert demo -->
+                <input type="hidden" id="lat" value="18.55">
+                <input type="hidden" id="lon" value="-72.3">
+            </div>
+            <button type="submit" class="submit-button" id="submit-button">Check Water Safety</button>
+        </form>
+
+        <div class="results-container" id="results-container">
+            <div id="result-summary"></div>
+            <div id="gemini-insights" class="result-box"></div>
+        </div>
+    </div>
+
+    <div id="history-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal()">×</span>
+            <h3 id="modal-title">Water Quality History</h3>
+            <canvas id="history-chart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let historyChart = null;
+        let currentLang = 'en';
+        const translations = {
+            en: { 'main-title': 'AquaSense AI', 'subtitle': 'An intelligent system for water safety in Haiti...', 'map-title': 'Community Water Safety Map', 'map-desc': 'Real-time status of water sources...', 'visual-title': 'Visual Water Check (No Sensor Needed)', 'visual-desc': 'Have a photo? Get an instant AI visual assessment.', 'visual-label': 'Upload a photo of your water sample:', 'checker-title': 'Real-Time Potability Check', 'submit-button': 'Check Water Safety', 'analyzing': 'Analyzing...' },
+            ht: { 'main-title': 'AquaSense Entèlijans Atifisyèl', 'subtitle': 'Yon sistèm entèlijan pou sekirite dlo an Ayiti...', 'map-title': 'Kat Kominotè Sekirite Dlo', 'map-desc': 'Estati an tan reyèl sous dlo...', 'visual-title': 'Tcheke Dlo ak Je (Pa Bezwen Capteur)', 'visual-desc': 'Ou gen yon foto? Jwenn yon evalyasyon vizyèl rapid.', 'visual-label': 'Chaje yon foto echantiyon dlo ou a:', 'checker-title': 'Tcheke Potabilite An Tan Reyèl', 'submit-button': 'Tcheke Sekirite Dlo', 'analyzing': 'Nap Analize...' }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('[id]').forEach(element => {
+                if (translations[lang] && translations[lang][element.id]) { element.innerHTML = translations[lang][element.id]; }
+            });
+            document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+            document.getElementById('lang-ht').classList.toggle('active', lang === 'ht');
+        }
+
+        // --- VISUAL ANALYSIS SCRIPT ---
+        document.getElementById('image-upload').addEventListener('change', async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async function() {
+                const visualResultsDiv = document.getElementById('visual-results-container');
+                visualResultsDiv.style.display = 'block';
+                visualResultsDiv.innerHTML = `<p>${translations[currentLang]['analyzing']}</p>`;
+                try {
+                    const response = await fetch('/analyze_image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: reader.result }) });
+                    const result = await response.json();
+                    if(response.ok) { visualResultsDiv.innerHTML = result.analysis.replace(/### (.*?)\n/g, '<h3>$1</h3>').replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>'); }
+                    else { throw new Error(result.error); }
+                } catch (error) { visualResultsDiv.innerHTML = `<p>Error: ${error.message}</p>`; }
+            };
+        });
+
+        // --- SENSOR-BASED PREDICTION SCRIPT ---
+        document.getElementById('water-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const submitButton = document.getElementById('submit-button');
+            const resultsContainer = document.getElementById('results-container');
+            const resultSummary = document.getElementById('result-summary');
+            const geminiDiv = document.getElementById('gemini-insights');
+            
+            submitButton.textContent = translations[currentLang]['analyzing'];
+            submitButton.disabled = true;
+            resultsContainer.style.display = 'none';
+
+            const data = { 'ph': document.getElementById('ph').value ? parseFloat(document.getElementById('ph').value) : null, 'Hardness': parseFloat(document.getElementById('Hardness').value), 'Solids': parseFloat(document.getElementById('Solids').value), 'Chloramines': parseFloat(document.getElementById('Chloramines').value), 'Sulfate': document.getElementById('Sulfate').value ? parseFloat(document.getElementById('Sulfate').value) : null, 'Conductivity': parseFloat(document.getElementById('Conductivity').value), 'Organic_carbon': parseFloat(document.getElementById('Organic_carbon').value), 'Trihalomethanes': document.getElementById('Trihalomethanes').value ? parseFloat(document.getElementById('Trihalomethanes').value) : null, 'Turbidity': parseFloat(document.getElementById('Turbidity').value), 'lat': parseFloat(document.getElementById('lat').value), 'lon': parseFloat(document.getElementById('lon').value) };
+
+            try {
+                const response = await fetch('/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                const result = await response.json();
+                if(response.ok) {
+                    resultSummary.textContent = `Result: ${result.prediction} (Confidence: ${result.confidence[result.prediction]}%)`;
+                    resultSummary.className = (result.prediction === 'Potable') ? 'safe' : 'unsafe';
+                    geminiDiv.innerHTML = result.gemini_advice.replace(/### (.*?)\n/g, '<h3>$1</h3>').replace(/\* (.*?)\n/g, '<li>$1</li>').replace(/\n/g, '<br>');
+                    resultsContainer.style.display = 'block';
+                    if (result.alert_message) {
+                        alert(result.alert_message);
+                        // In a real app, you'd refresh the map here to show the color change
+                    }
+                } else { throw new Error(result.error || 'Unknown error'); }
+            } catch (error) {
+                resultSummary.textContent = `Error: ${error.message}`;
+                resultSummary.className = 'unsafe';
+                resultsContainer.style.display = 'block';
+            } finally {
+                submitButton.textContent = translations[currentLang]['submit-button'];
+                submitButton.disabled = false;
+            }
+        });
+
+        // --- MAP AND MODAL SCRIPT ---
+        let map; // Define map globally to be accessible
+        const iconDefs = {
+            green: new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] }),
+            red: new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] }),
+            gold: new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] }),
+            blue: new L.Icon({ iconUrl: "{{ url_for('static', filename='marker-icon-verified.png') }}", shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] })
+        };
+
+        async function populateMap() {
+            if (!map) { map = L.map('map').setView([18.5392, -72.3364], 10); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map); }
+            try {
+                const response = await fetch('/api/water_points');
+                const waterPoints = await response.json();
+                waterPoints.forEach(point => {
+                    let iconToUse = iconDefs.red;
+                    if (point.status === 'Potable') iconToUse = iconDefs.green;
+                    if (point.status === 'Caution') iconToUse = iconDefs.gold;
+                    if (point.verified) iconToUse = iconDefs.blue;
+                    const popupContent = `<b>${point.name}</b><br>Status: <b>${point.status}</b><br>${point.verified ? '<i>(Verified Source)</i><br>': ''}<button onclick='showHistoryModal(${JSON.stringify(point)})'>View History</button>`;
+                    L.marker([point.lat, point.lon], {icon: iconToUse}).addTo(map).bindPopup(popupContent);
+                });
+            } catch (error) { console.error("Could not fetch water points:", error); }
+        }
+
+        document.addEventListener('DOMContentLoaded', populateMap);
+
+        function showHistoryModal(point) {
+            const modal = document.getElementById('history-modal');
+            document.getElementById('modal-title').textContent = `History for ${point.name}`;
+            const ctx = document.getElementById('history-chart').getContext('2d');
+            modal.style.display = 'flex';
+            if (historyChart) historyChart.destroy();
+            historyChart = new Chart(ctx, { type: 'line', data: { labels: ['4 wks ago', '3 wks ago', '2 wks ago', 'Last wk'], datasets: [{ label: 'Sulfate (mg/L)', data: point.history.Sulfate, borderColor: '#ff6384', yAxisID: 'y' }, { label: 'Turbidity (NTU)', data: point.history.Turbidity, borderColor: '#36a2eb', yAxisID: 'y1' }] }, options: { scales: { y: { position: 'left', title: { display: true, text: 'Sulfate' }}, y1: { position: 'right', title: { display: true, text: 'Turbidity' }, grid: { drawOnChartArea: false }}}} });
+        }
+
+        function closeModal() { document.getElementById('history-modal').style.display = 'none'; }
+    </script>
+</body>
+</html>
