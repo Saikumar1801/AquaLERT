@@ -23,7 +23,7 @@ except Exception as e:
     lgbm_model = None
 
 try:
-    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyCSY99eJ9Ad1ENhRHS97c0AVS9S14pLcWA')
+    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'Your API')
     if 'YOUR_API_KEY_HERE' in GEMINI_API_KEY:
         print("⚠️ WARNING: Gemini API key not set. AI advisory features will be disabled.")
         gemini_model, vision_model = None, None
